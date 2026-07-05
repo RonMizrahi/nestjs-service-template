@@ -10,6 +10,8 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().default('postgres://app:app@localhost:5432/app'),
   JWT_SECRET: z.string().min(32).default('dev-only-secret-change-me-32-chars!!'),
   JWT_EXPIRES_IN: z.string().default('15m'),
+  REDIS_URL: z.string().optional(), // unset → in-memory cache (dev/tests without Redis)
+  CACHE_TTL_MS: z.coerce.number().int().positive().default(30_000),
 });
 
 /** Typed shape of the validated environment — use with `ConfigService<Env, true>`. */

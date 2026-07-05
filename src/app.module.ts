@@ -9,10 +9,12 @@ import { join } from 'node:path';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { CachingModule } from './cache/caching.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { validateEnv, type Env } from './config/env.schema';
+import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -35,6 +37,8 @@ import { UsersModule } from './users/users.module';
         { name: 'long', ttl: seconds(60), limit: 100 },
       ],
     }),
+    CachingModule,
+    HealthModule,
     UsersModule,
     AuthModule,
     LoggerModule.forRootAsync({

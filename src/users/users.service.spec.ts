@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
 import { PasswordService } from '../auth/password.service';
+import { AppCacheService } from '../cache/app-cache.service';
 import { ResourceNotFoundException } from '../common/exceptions/app.exception';
 import { Role } from '../common/enums/role.enum';
 import { User } from './entities/user.entity';
@@ -28,6 +29,7 @@ describe('UsersService', () => {
     delete: jest.fn(() => Promise.resolve(true)),
   };
   const passwordService = { hash: jest.fn(() => Promise.resolve('new-hash')) };
+  const appCache = { evict: jest.fn(() => Promise.resolve()) };
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
 
   let service: UsersService;
@@ -39,6 +41,7 @@ describe('UsersService', () => {
         UsersService,
         { provide: UsersRepository, useValue: usersRepository },
         { provide: PasswordService, useValue: passwordService },
+        { provide: AppCacheService, useValue: appCache },
         { provide: getLoggerToken(UsersService.name), useValue: logger },
       ],
     }).compile();
@@ -56,6 +59,7 @@ describe('UsersService', () => {
     });
     expect(result.id).toBe(id);
     expect(result).not.toHaveProperty('passwordHash');
+    expect(appCache.evict).toHaveBeenCalled();
   });
 
   it('lists users as response DTOs', async () => {
@@ -83,8 +87,9 @@ describe('UsersService', () => {
     await expect(service.update(id, {})).rejects.toBeInstanceOf(ResourceNotFoundException);
   });
 
-  it('removes a user', async () => {
+  it('removes a user and evicts the list cache', async () => {
     await expect(service.remove(id)).resolves.toBeUndefined();
+    expect(appCache.evict).toHaveBeenCalled();
   });
 
   it('throws 404 when removing a missing user', async () => {

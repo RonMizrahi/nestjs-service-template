@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { PasswordService } from '../auth/password.service';
+import { AppCacheService } from '../cache/app-cache.service';
 import { ResourceNotFoundException } from '../common/exceptions/app.exception';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { USERS_LIST_CACHE_KEY } from './users.constants';
 import { UsersRepository } from './users.repository';
 
 const USER = 'User';
@@ -17,6 +19,7 @@ export class UsersService {
     private readonly logger: PinoLogger,
     private readonly usersRepository: UsersRepository,
     private readonly passwordService: PasswordService,
+    private readonly appCache: AppCacheService,
   ) {}
 
   /**
@@ -31,6 +34,7 @@ export class UsersService {
       roles: dto.roles,
     });
     this.logger.info({ userId: user.id }, 'User created');
+    await this.appCache.evict(USERS_LIST_CACHE_KEY);
     return new UserResponseDto(user);
   }
 
@@ -58,6 +62,7 @@ export class UsersService {
     const user = await this.usersRepository.update(id, dto);
     if (!user) throw new ResourceNotFoundException(USER, id);
     this.logger.info({ userId: id }, 'User updated');
+    await this.appCache.evict(USERS_LIST_CACHE_KEY);
     return new UserResponseDto(user);
   }
 
@@ -69,5 +74,6 @@ export class UsersService {
     const deleted = await this.usersRepository.delete(id);
     if (!deleted) throw new ResourceNotFoundException(USER, id);
     this.logger.info({ userId: id }, 'User deleted');
+    await this.appCache.evict(USERS_LIST_CACHE_KEY);
   }
 }

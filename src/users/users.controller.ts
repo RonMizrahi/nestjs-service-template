@@ -1,3 +1,4 @@
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import {
   Body,
   Controller,
@@ -9,6 +10,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -26,6 +28,7 @@ import { Role } from '../common/enums/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { USERS_LIST_CACHE_KEY, USERS_LIST_CACHE_TTL_MS } from './users.constants';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
@@ -48,7 +51,11 @@ export class UsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all users' })
+  // declarative response caching — mutations evict the key in UsersService
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey(USERS_LIST_CACHE_KEY)
+  @CacheTTL(USERS_LIST_CACHE_TTL_MS)
+  @ApiOperation({ summary: 'List all users', description: `Cached for ${USERS_LIST_CACHE_TTL_MS}ms.` })
   @ApiOkResponse({ type: UserResponseDto, isArray: true })
   @ApiResponse({ status: 401, description: 'Missing or invalid token' })
   @ApiResponse({ status: 403, description: 'Requires the admin role' })

@@ -70,15 +70,18 @@ Every milestone ends with: **unit tests green → integration tests green (where
 - [ ] code-quality-pipeline → commit
 
 ### M6 — Cache & health
-- [ ] `CacheModule.registerAsync` — Keyv + `@keyv/redis` stores array, ms TTL
-- [ ] `cache/app-cache.service.ts` — typed getOrSet/evict via `CACHE_MANAGER`
-- [ ] `CacheInterceptor` + `@CacheKey/@CacheTTL` on a read endpoint
-- [ ] `health/` — Terminus: `/health/liveness` (empty) & `/health/readiness` (TypeORM ping + custom Redis indicator via `HealthIndicatorService`), VERSION_NEUTRAL
-- [ ] Unit tests: cache service (undefined-on-miss semantics), Redis indicator up/down → verify: `npm run test`
-- [ ] Integration test: health endpoints against Testcontainers Redis+PG → verify: `npm run test:int`
-- [ ] code-quality-pipeline → commit
+- [x] `CacheModule.registerAsync` — Keyv + `@keyv/redis` stores array, ms TTL
+- [x] `cache/app-cache.service.ts` — typed getOrSet/evict via `CACHE_MANAGER`
+- [x] `CacheInterceptor` + `@CacheKey/@CacheTTL` on a read endpoint
+- [x] `health/` — Terminus: `/health/liveness` (empty) & `/health/readiness` (TypeORM ping + custom Redis indicator via `HealthIndicatorService`), VERSION_NEUTRAL
+- [x] Unit tests: cache service (undefined-on-miss semantics), Redis indicator up/down → verify: `npm run test`
+- [x] Integration test: health endpoints against Testcontainers Redis+PG → verify: `npm run test:int`
+- [x] code-quality-pipeline → commit
+- Deviations (verified during Gate A): dedicated `CACHE_PROBE` Keyv with `throwOnErrors` (main cache + keyv/@keyv/redis all swallow errors — probing via `CACHE_MANAGER` would always report up); `CachingModule.onApplicationShutdown` disconnects the probe (raw Keyv providers get no Nest lifecycle — leaked node-redis reconnect loop hung Jest); readiness `down` returns generic `'cache unreachable'` and logs the raw driver error server-side (public endpoint must not leak internal hosts/auth state)
 
-### M7 — Messaging (pluggable Kafka + SQS)
+### M7 — Messaging (pluggable Kafka + SQS) + permissions-based authz
+- [ ] Permissions layer (decision 05-07: claims-based, no external RBAC — zero per-request hops, zero-trust at the service): `Permission` enum + role→permission map applied at **token issuance** (`permissions` claim), `@RequirePermissions()` decorator + `PermissionsGuard` alongside `@Roles()`; changing role→permission mapping = auth-side change only
+- [ ] Unit tests: permissions guard (allow/deny/missing claim), issuance mapping → verify: `npm run test`
 - [ ] `messaging/message-bus.ts` — `MESSAGE_BUS` token + `MessageBus` port (publish/ask)
 - [ ] `messaging/kafka.bus.ts` — ClientKafka wrapper (connect/subscribeToResponseOf lifecycle)
 - [ ] `messaging/sqs.bus.ts` — @ssut/nestjs-sqs SqsService wrapper (AWS SDK v3)

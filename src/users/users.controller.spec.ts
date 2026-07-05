@@ -1,3 +1,4 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test } from '@nestjs/testing';
 import { Role } from '../common/enums/role.enum';
 import { UsersController } from './users.controller';
@@ -21,7 +22,11 @@ describe('UsersController', () => {
     jest.clearAllMocks();
     const moduleRef = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [{ provide: UsersService, useValue: usersService }],
+      providers: [
+        { provide: UsersService, useValue: usersService },
+        // CacheInterceptor on findAll resolves CACHE_MANAGER from this module
+        { provide: CACHE_MANAGER, useValue: { get: jest.fn(), set: jest.fn() } },
+      ],
     }).compile();
     controller = moduleRef.get(UsersController);
   });
