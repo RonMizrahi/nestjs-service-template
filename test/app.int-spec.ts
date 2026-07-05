@@ -17,9 +17,17 @@ describe('Application bootstrap (smoke)', () => {
     await app.close();
   });
 
-  it('boots the module graph and serves HTTP (unknown route → 404)', async () => {
-    await request(app.getHttpServer())
-      .get(`/unknown-${crypto.randomUUID()}`)
-      .expect(404);
+  it('boots the module graph and serves HTTP (unknown route → 404 envelope)', async () => {
+    const path = `/unknown-${crypto.randomUUID()}`;
+    const response = await request(app.getHttpServer()).get(path).expect(404);
+
+    const body = response.body as Record<string, unknown>;
+    expect(body).toMatchObject({
+      statusCode: 404,
+      error: 'NOT_FOUND',
+      path,
+    });
+    expect(body.correlationId).toEqual(expect.any(String));
+    expect(response.headers['x-request-id']).toBe(body.correlationId);
   });
 });
