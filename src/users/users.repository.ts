@@ -70,12 +70,18 @@ export class UsersRepository {
   /**
    * Merges a partial update via preload+save (bumps @UpdateDateColumn).
    * @returns The updated user, or null when absent.
+   * @throws DuplicateResourceException when changing to a taken email.
    */
   async update(id: string, data: Partial<User>): Promise<User | null> {
     // id spread LAST so a stray data.id can never redirect the write
     const user = await this.repo.preload({ ...data, id });
     if (!user) return null;
-    return this.repo.save(user);
+    try {
+      return await this.repo.save(user);
+    } catch (error) {
+      if (isUniqueViolation(error)) throw new DuplicateResourceException('User', 'email');
+      throw error;
+    }
   }
 
   /**

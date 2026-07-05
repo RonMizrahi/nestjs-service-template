@@ -7,13 +7,14 @@ import { UsersModule } from '../users/users.module';
 import { JWT_ISSUER } from './auth.constants';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { PasswordService } from './password.service';
+import { PasswordModule } from './password.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [
     UsersModule,
+    PasswordModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -27,7 +28,7 @@ import { LocalStrategy } from './strategies/local.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, JwtStrategy, LocalStrategy],
-  exports: [AuthService, PasswordService],
+  providers: [AuthService, JwtStrategy, LocalStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}
