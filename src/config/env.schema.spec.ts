@@ -31,11 +31,16 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ PORT: '655350' })).toThrow(/Invalid environment/);
   });
 
-  it('requires an explicit DATABASE_URL in production', () => {
+  it('requires explicit DATABASE_URL and JWT_SECRET in production', () => {
+    const secret = crypto.randomUUID().repeat(2);
+    const url = 'postgres://u:p@db:5432/app';
+
     expect(() => validateEnv({ NODE_ENV: 'production' })).toThrow(/DATABASE_URL is required/);
+    expect(() => validateEnv({ NODE_ENV: 'production', DATABASE_URL: url })).toThrow(
+      /JWT_SECRET is required/,
+    );
     expect(
-      validateEnv({ NODE_ENV: 'production', DATABASE_URL: 'postgres://u:p@db:5432/app' })
-        .DATABASE_URL,
-    ).toBe('postgres://u:p@db:5432/app');
+      validateEnv({ NODE_ENV: 'production', DATABASE_URL: url, JWT_SECRET: secret }).DATABASE_URL,
+    ).toBe(url);
   });
 });
