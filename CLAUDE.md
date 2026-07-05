@@ -24,7 +24,8 @@ npm run build          # nest build
 npm run test           # unit tests (Jest)
 npm run test:int       # integration tests (Testcontainers — Docker required)
 npm run lint           # eslint
-npm run migration:generate / migration:run / migration:revert
+npm run migration:generate -- src/migrations/<Name>   # path arg required
+npm run migration:run / migration:revert
 docker compose up      # full dev stack (postgres, redis, kafka, localstack, jaeger + UIs)
 ```
 

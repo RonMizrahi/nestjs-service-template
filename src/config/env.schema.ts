@@ -7,6 +7,7 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().default('*'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SWAGGER_ENABLED: z.stringbool().default(true),
+  DATABASE_URL: z.string().default('postgres://app:app@localhost:5432/app'),
 });
 
 /** Typed shape of the validated environment — use with `ConfigService<Env, true>`. */
@@ -18,6 +19,10 @@ export type Env = z.infer<typeof envSchema>;
  * @throws Error with a readable summary when validation fails.
  */
 export function validateEnv(raw: Record<string, unknown>): Env {
+  // dev-only defaults must never silently apply in production
+  if (raw.NODE_ENV === 'production' && !raw.DATABASE_URL) {
+    throw new Error('Invalid environment configuration — DATABASE_URL is required in production');
+  }
   const parsed = envSchema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues

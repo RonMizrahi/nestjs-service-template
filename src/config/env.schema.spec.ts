@@ -30,4 +30,12 @@ describe('validateEnv', () => {
   it('rejects a PORT above 65535', () => {
     expect(() => validateEnv({ PORT: '655350' })).toThrow(/Invalid environment/);
   });
+
+  it('requires an explicit DATABASE_URL in production', () => {
+    expect(() => validateEnv({ NODE_ENV: 'production' })).toThrow(/DATABASE_URL is required/);
+    expect(
+      validateEnv({ NODE_ENV: 'production', DATABASE_URL: 'postgres://u:p@db:5432/app' })
+        .DATABASE_URL,
+    ).toBe('postgres://u:p@db:5432/app');
+  });
 });

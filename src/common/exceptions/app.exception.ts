@@ -19,3 +19,14 @@ export class ResourceNotFoundException extends AppException {
     super('RESOURCE_NOT_FOUND', `${resource} ${id} not found`, HttpStatus.NOT_FOUND);
   }
 }
+
+/** Thrown on a uniqueness conflict (e.g. duplicate email) — maps to 409. */
+export class DuplicateResourceException extends AppException {
+  constructor(resource: string, field: string) {
+    super(
+      'RESOURCE_ALREADY_EXISTS',
+      `${resource} with this ${field} already exists`,
+      HttpStatus.CONFLICT,
+    );
+  }
+}

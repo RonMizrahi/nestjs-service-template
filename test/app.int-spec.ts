@@ -1,20 +1,29 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
 
 describe('Application bootstrap (smoke)', () => {
+  let container: StartedPostgreSqlContainer;
   let app: INestApplication<App>;
 
   beforeAll(async () => {
+    container = await new PostgreSqlContainer('postgres:18-alpine').start();
+    process.env.DATABASE_URL = container.getConnectionUri();
+
+    // AppModule is loaded AFTER env is set — ConfigModule.forRoot captures
+    // process.env when the module file is first imported.
+    const { AppModule } =
+      jest.requireActual<typeof import('../src/app.module')>('../src/app.module');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication({ bufferLogs: true });
     await app.init();
-  });
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();
+    await container.stop();
   });
 
   it('boots the module graph and serves HTTP (unknown route → 404 envelope)', async () => {
