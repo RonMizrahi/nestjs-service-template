@@ -93,11 +93,12 @@ Every milestone ends with: **unit tests green → integration tests green (where
 - Deviations (verified during Gate A): `ask()` on SQS/none throws `NotImplementedException` (no reply channel); global HTTP guards made context-aware — `JwtAuthGuard` early-returns and `HttpThrottlerGuard` (new, replaces stock `ThrottlerGuard`) passes non-HTTP contexts so Kafka consumers aren't rejected/crashed by `res.header()`; Kafka producer client uses `producerOnlyMode` while `ASK_TOPICS` is empty (a failing consumer group-join must not break publish); SQS handler validates wire payloads with Zod at the boundary; `user.created` publish failures are logged, never fail user creation
 
 ### M8 — Resilience & external HTTP
-- [ ] `external/resilience.ts` — cockatiel wrap(retry+breaker+timeout) built once per dependency
-- [ ] `external/external-api.service.ts` — @nestjs/axios through the policy, BrokenCircuitError→503
-- [ ] Demo controller route exposing the external call
-- [ ] Unit tests: retry/breaker behavior (fake failing fn), 503 mapping → verify: `npm run test`
-- [ ] code-quality-pipeline → commit
+- [x] `external/resilience.ts` — cockatiel wrap(retry+breaker+timeout) built once per dependency
+- [x] `external/external-api.service.ts` — @nestjs/axios through the policy, BrokenCircuitError→503
+- [x] Demo controller route exposing the external call
+- [x] Unit tests: retry/breaker behavior (fake failing fn), 503 mapping → verify: `npm run test`
+- [x] code-quality-pipeline → commit
+- Deviations (verified during Gate A): policy provided via `EXTERNAL_API_POLICY` token (testable DI, breaker state spans calls); factory takes per-dependency tuning knobs; cooperative timeout's `AbortSignal` is passed into axios so cancellation is real; cockatiel is **ESM-only** — runtime relies on Node ≥24 native `require(esm)` (verified against compiled dist; documented at the import) and both Jest configs transform it to CJS (`transformIgnorePatterns` whitelist + `.js` ts-jest transform); no integration test for the demo route (would hit the live external API — unit-covered with mocked HttpService)
 
 ### M9 — Observability (OTel + Prometheus)
 - [ ] `src/tracing.ts` — NodeSDK + auto-instrumentations + OTLP proto exporter (preload via `node --require`)

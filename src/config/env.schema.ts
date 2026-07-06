@@ -19,6 +19,7 @@ export const envSchema = z.object({
   SQS_QUEUE_URL: z.string().optional(), // required when MESSAGING_DRIVER=sqs
   SQS_REGION: z.string().default('us-east-1'),
   SQS_ENDPOINT: z.string().optional(), // e.g. http://localhost:4566 for LocalStack
+  EXTERNAL_API_URL: z.string().default('https://jsonplaceholder.typicode.com'),
 });
 
 /** Typed shape of the validated environment — use with `ConfigService<Env, true>`. */

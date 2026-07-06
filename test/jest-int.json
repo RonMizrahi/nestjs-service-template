@@ -4,7 +4,18 @@
   "testEnvironment": "node",
   "testRegex": "\\.int-spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.ts$": "ts-jest",
+    "^.+\\.js$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "allowJs": true,
+          "module": "commonjs",
+          "moduleResolution": "node10"
+        }
+      }
+    ]
   },
+  "transformIgnorePatterns": ["node_modules[/\\\\](?!cockatiel[/\\\\])"],
   "testTimeout": 120000
 }

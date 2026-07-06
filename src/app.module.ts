@@ -16,6 +16,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { HttpThrottlerGuard } from './common/guards/http-throttler.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { validateEnv, type Env } from './config/env.schema';
+import { ExternalModule } from './external/external.module';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 
@@ -40,6 +41,7 @@ import { UsersModule } from './users/users.module';
       ],
     }),
     CachingModule,
+    ExternalModule,
     HealthModule,
     UsersModule,
     AuthModule,
