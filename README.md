@@ -1,2 +1,158 @@
 # nestjs-service-template
-nestjs service template to start a new service quickly
+
+Production-grade **NestJS 11** service template — the Node/TypeScript mirror of
+[spring-service-template](https://github.com/RonMizrahi/spring-service-template).
+Latest stable stack, zero deprecated APIs, short decorator-heavy code, and every
+cross-cutting concern a real service needs, pre-wired and tested.
+
+## Features
+
+- **HTTP** — Express 5, helmet, CORS, URI versioning (`/v1/...`), global validation
+  (`whitelist: true`), consistent error envelope with `correlationId`
+- **Auth** — JWT (HS256, issuer-pinned) + argon2id passwords; global secure-by-default
+  guard chain: throttle → JWT (`@Public()` opt-out) → roles (`@Roles()`) → permissions
+  (`@RequirePermissions()`, claims derived from roles **at token issuance**)
+- **Data** — TypeORM 1.0 + Postgres, repository pattern, migrations only
+  (`synchronize: false`), worked `users` CRUD example
+- **Cache** — Keyv (`@keyv/redis` when `REDIS_URL` is set, in-memory otherwise),
+  declarative `CacheInterceptor` + eviction, fail-open main cache with a fail-closed
+  health probe store
+- **Messaging** — pluggable `MessageBus` port: Kafka / SQS / none via `MESSAGING_DRIVER`;
+  producers + consumers for both, `user.created` demo event
+- **Resilience** — cockatiel retry → circuit breaker → cooperative timeout around external
+  HTTP (`@nestjs/axios`), circuit-open → `503`
+- **Observability** — OTel tracing (OTLP → Jaeger v2) via preload, `trace_id` in logs,
+  Prometheus `/metrics` + custom histogram, nestjs-pino JSON logs (no PII)
+- **Health** — Terminus `/health/liveness` (no dependencies) and `/health/readiness`
+  (Postgres ping + real Redis roundtrip)
+- **Delivery** — multi-stage Dockerfile (distroless, nonroot), full `docker compose` dev
+  stack with UIs, GitHub Actions CI, Testcontainers integration tests
+
+## Quickstart
+
+```bash
+npm ci
+npm run start:dev              # in-memory cache, no broker, Postgres required (see below)
+
+# or bring up EVERYTHING (app + postgres/adminer + redis/redisinsight + kafka/kafka-ui
+# + localstack + jaeger):
+docker compose up --build
+```
+
+| UI           | URL                    |
+| ------------ | ---------------------- |
+| Swagger      | http://localhost:3000/docs |
+| Adminer      | http://localhost:8081  |
+| RedisInsight | http://localhost:5540  |
+| Kafka UI     | http://localhost:8082  |
+| Jaeger       | http://localhost:16686 |
+
+Try it: `POST /v1/auth/register` → take `accessToken` → `GET /v1/auth/me`.
+
+## Commands
+
+```bash
+npm run start:dev      # watch mode
+npm run build          # nest build
+npm run start:prod     # node --require ./dist/tracing dist/main
+npm run test           # unit tests (Jest)
+npm run test:int       # integration tests (Testcontainers — Docker required)
+npm run lint           # eslint --fix   (lint:check = CI mode)
+npm run migration:generate -- src/migrations/<Name>
+npm run migration:run / migration:revert
+```
+
+## Environment
+
+Validated by a Zod schema (`src/config/env.schema.ts`) — boot fails fast on invalid
+config. Dev defaults exist for everything; **production requires** `DATABASE_URL` and
+`JWT_SECRET`.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `NODE_ENV` | `development` | |
+| `PORT` | `3000` | |
+| `CORS_ORIGINS` | `*` | comma-separated origins |
+| `LOG_LEVEL` | `info` | pino level |
+| `SWAGGER_ENABLED` | `true` | **disable in production** unless intended |
+| `DATABASE_URL` | dev localhost | required in prod |
+| `JWT_SECRET` | dev value | required in prod, min 32 chars |
+| `JWT_EXPIRES_IN` | `15m` | also the max staleness of role/permission claims |
+| `REDIS_URL` | _(unset)_ | unset → in-memory cache |
+| `CACHE_TTL_MS` | `30000` | milliseconds |
+| `MESSAGING_DRIVER` | `none` | `kafka` \| `sqs` \| `none` |
+| `KAFKA_BROKERS` | `localhost:9092` | comma-separated |
+| `KAFKA_CLIENT_ID` / `KAFKA_GROUP_ID` | template name | |
+| `SQS_QUEUE_URL` | _(unset)_ | **required when driver=sqs** |
+| `SQS_REGION` / `SQS_ENDPOINT` | `us-east-1` / _(unset)_ | endpoint only for LocalStack |
+| `EXTERNAL_API_URL` | jsonplaceholder | demo dependency |
+| `OTEL_ENABLED` | `false` | literal `true`/`false` only |
+| `OTEL_SERVICE_NAME` | template name | |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | SDK default `:4318` | |
+
+## Architecture
+
+```
+src/
+  config/        # Zod env schema — the only place process.env is read¹
+  common/        # filters, interceptors, guards, decorators, pipes (global via APP_*)
+  auth/          # JWT + local strategies, guards, argon2, role→permission policy
+  users/         # worked example: entity, repository, service, controller, DTOs
+  cache/         # Keyv/Redis cache module + AppCacheService (+ fail-closed probe)
+  health/        # Terminus liveness/readiness
+  messaging/     # MessageBus port + Kafka/SQS/noop adapters + consumers
+  external/      # resilient external API client (cockatiel + axios)
+  observability/ # Prometheus /metrics, OTel @Span support
+  tracing.ts     # ¹the exception: OTel preload runs BEFORE Nest (node --require)
+data-source.ts   # standalone DataSource for the TypeORM CLI
+```
+
+**Request pipeline:** helmet/CORS → pino (x-request-id) → throttler → JWT guard →
+roles guard → permissions guard → ValidationPipe → controller → interceptors
+(serializer, logging, optional cache) → exception filters (consistent envelope).
+
+### Authorization model
+
+Endpoints declare **permissions** (`@RequirePermissions(Permission.UsersRead)`);
+which roles grant them is auth-side policy (`ROLE_PERMISSIONS`), applied **once at
+token issuance** into the signed `permissions` claim. Changing the mapping is an
+auth-service change — resource services never redeploy. No external RBAC hop: the
+JWT signature (HS256 + issuer pinned) makes claims trustworthy at each service
+(zero-trust, zero per-request overhead).
+
+**Tradeoff (accepted):** stateless JWTs mean role/permission changes and bans take
+effect on the next token, up to `JWT_EXPIRES_IN` (15m). If you need instant
+revocation, add a denylist or a fresh DB check in `JwtStrategy.validate`.
+
+## Deployment notes
+
+- **Behind a proxy/LB:** set Express `trust proxy` (in `main.ts`:
+  `app.getHttpAdapter().getInstance().set('trust proxy', 1)`) so the throttler keys
+  on the real client IP, not the LB's.
+- **`/metrics` and `/health/*` are public by design** (scrapers/probes don't
+  authenticate). Restrict them at the ingress if your network isn't trusted.
+- **Swagger** is on by default for DX — set `SWAGGER_ENABLED=false` in production.
+- The Docker image is distroless + nonroot: no shell, minimal CVE surface; the OTel
+  preload is baked into the image CMD.
+
+## Feature map vs spring-service-template
+
+| Concern | Spring | Here |
+| --- | --- | --- |
+| DI / decorators | Spring annotations | Nest decorators |
+| Config validation | `@ConfigurationProperties` | Zod schema, fail-fast |
+| Persistence | JPA/Hibernate + Flyway | TypeORM + migrations |
+| Auth | Spring Security JWT | Passport JWT + guards + permissions |
+| Cache | Spring Cache + Redis | cache-manager + Keyv/Redis |
+| Messaging | Spring abstraction (SQS) | MessageBus port (Kafka + SQS) |
+| Resilience | Resilience4j | cockatiel |
+| Observability | Micrometer + OTel | prom-client + OTel |
+| Health | Actuator | Terminus |
+| API docs | springdoc | @nestjs/swagger |
+
+## Testing
+
+- **Unit** (`*.spec.ts`, next to code): 104 tests — services, guards, buses, policies.
+- **Integration** (`test/*.int-spec.ts`): 23 tests against **real Postgres + Redis**
+  via Testcontainers — auth flows, users CRUD + RBAC, health, metrics, error envelope.
+- No UI → no e2e; the full request→response path is covered by the integration suite.

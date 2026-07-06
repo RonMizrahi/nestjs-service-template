@@ -109,12 +109,13 @@ Every milestone ends with: **unit tests green → integration tests green (where
 - Deviations (verified during Gate A): custom `MetricsController` is `@Public` + `VERSION_NEUTRAL` + Swagger-excluded (scrapers hit `/metrics`, not `/v1/metrics`); histogram `app_external_api_duration_seconds{operation,outcome}` recorded in `ExternalApiService.fetchTodo` (also the `@Span` demo); `OTEL_ENABLED` schema restricted to literal `true|false` so spellings the preload ignores (`1`, `yes`) fail validation instead of silently disabling tracing; preload smoke-tested against compiled dist in both modes; `/metrics` covered by an integration happy-path (23 int tests total)
 
 ### M10 — Docker, compose, CI, docs, integration suite
-- [ ] Multi-stage `Dockerfile` (node:24 slim builder → distroless nodejs24 nonroot)
-- [ ] `compose.yaml` — app, postgres:18-alpine+adminer:5, redis:8-alpine+redisinsight, apache/kafka:4.2 (KRaft)+kafbat-ui, localstack (sqs), jaeger v2 — healthchecks + service_healthy deps
-- [ ] `.env.example` finalized; README (quickstart, env table, architecture, feature map vs Spring template)
-- [ ] GitHub Actions CI: lint + build + unit + integration
-- [ ] Full integration suite pass → verify: `npm run test:int` (+ `docker compose config` valid)
-- [ ] code-quality-pipeline (holistic Gate B) → commit
+- [x] Multi-stage `Dockerfile` (node:24 slim builder → distroless nodejs24 nonroot)
+- [x] `compose.yaml` — app, postgres:18-alpine+adminer:5, redis:8-alpine+redisinsight, apache/kafka:4.2 (KRaft)+kafbat-ui, localstack (sqs), jaeger v2 — healthchecks + service_healthy deps
+- [x] `.env.example` finalized; README (quickstart, env table, architecture, feature map vs Spring template, authz model + revocation-lag note, trust-proxy note)
+- [x] GitHub Actions CI: lint + build + unit + integration
+- [x] Full integration suite pass → verify: `npm run test:int` (+ `docker compose config` valid)
+- [x] code-quality-pipeline (holistic Gate B) → commit
+- Deviations (verified during Gate A): distroless base is `nodejs24-debian13:nonroot` (the `-debian12` variant is deprecated/frozen upstream — caught by review); `scripts/localstack-init.sh` tracked as `100755` in git (LocalStack `ready.d` hooks silently skip non-executable scripts; Windows git would otherwise commit `100644`); image build + container boot smoke-tested (fails fast on missing prod `DATABASE_URL` as designed, proving the OTel preload + `require(esm)` inside distroless)
 
 ### Close-out (Phase 3)
 - [ ] Update this plan file: statuses, deviations, verification results
