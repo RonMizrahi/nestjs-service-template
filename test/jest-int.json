@@ -1,0 +1,21 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": "\\.int-spec\\.ts$",
+  "transform": {
+    "^.+\\.ts$": "ts-jest",
+    "^.+\\.js$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "allowJs": true,
+          "module": "commonjs",
+          "moduleResolution": "node10"
+        }
+      }
+    ]
+  },
+  "transformIgnorePatterns": ["node_modules[/\\\\](?!cockatiel[/\\\\])"],
+  "testTimeout": 120000
+}
