@@ -25,7 +25,7 @@ cross-cutting concern a real service needs, pre-wired and tested.
   Prometheus `/metrics` + custom histogram, nestjs-pino JSON logs (no PII)
 - **Health** — Terminus `/health/liveness` (no dependencies) and `/health/readiness`
   (Postgres ping + real Redis roundtrip)
-- **Delivery** — multi-stage Dockerfile (distroless, nonroot), full `docker compose` dev
+- **Delivery** — multi-stage Alpine Dockerfile (nonroot user), full `docker compose` dev
   stack with UIs, GitHub Actions CI, Testcontainers integration tests
 
 ## Quickstart
@@ -132,8 +132,10 @@ revocation, add a denylist or a fresh DB check in `JwtStrategy.validate`.
 - **`/metrics` and `/health/*` are public by design** (scrapers/probes don't
   authenticate). Restrict them at the ingress if your network isn't trusted.
 - **Swagger** is on by default for DX — set `SWAGGER_ENABLED=false` in production.
-- The Docker image is distroless + nonroot: no shell, minimal CVE surface; the OTel
-  preload is baked into the image CMD.
+- The Docker image is Alpine (musl) running as the nonroot `node` user; the OTel preload
+  is baked into the image CMD. Both stages are Alpine on purpose — native modules must be
+  installed on the libc they run on (argon2 ships musl prebuilds; if you add a native dep
+  without them, add `apk add --no-cache python3 make g++` to the build stage).
 
 ## Feature map vs spring-service-template
 

@@ -19,6 +19,7 @@ Branch: `plan/nestjs-service-template` off `main`. Every milestone lands as comm
 - **Node 24 LTS** (v24.14.1 installed ✓), TypeScript ~5.9/6.x per Nest 11 peer support, Docker 29 ✓, remote = github.com/RonMizrahi/nestjs-service-template ✓.
 - **Testing:** Jest 30 + Supertest (backend-only → **no Playwright e2e**, per testing-standards). Integration tests via Testcontainers (real Postgres/Redis). Random UUIDs for all test entities.
 - **Logging:** nestjs-pino (§B pattern — `@InjectPinoLogger`, meta-first args).
+- **Docker runtime: `node:24-alpine`** (user decision 06-07-2026, post-Gate-B) — replaces the blueprint's distroless default; both stages Alpine so argon2 loads its musl prebuilds (never build glibc → run musl); nonroot `node` user; shell-based debuggability preferred over distroless's smaller attack surface.
 
 ## Milestones
 
@@ -129,6 +130,6 @@ Every milestone ends with: **unit tests green → integration tests green (where
 - **Unit:** 108 tests / 32 suites green (`npm run test`, ~3.6s)
 - **Integration:** 23 tests / 5 suites green against Testcontainers Postgres 18 + Redis 8 (`npm run test:int`, ~26s) — auth flows incl. foreign-issuer rejection, users CRUD + RBAC + 400/409, health liveness/readiness, `/metrics`, 404 envelope
 - **Lint/build:** clean (type-checked ESLint; `nest build`); `npm audit` 0 vulnerabilities (multer overridden to ^2.2.0)
-- **Docker:** image builds (distroless nodejs24-debian13 nonroot, 508MB); container boots and fails fast on missing prod `DATABASE_URL` as designed; `docker compose config` valid
+- **Docker:** image builds (`node:24-alpine` both stages, nonroot `node` user verified, 536MB); container boots — argon2 musl prebuild loads — and fails fast on missing prod `DATABASE_URL` as designed; `docker compose config` valid
 - **Gate A:** ran per milestone (review → simplify → security → final review, parallel subagents; findings fixed each round — see per-milestone deviation notes)
 - **Gate B (holistic, 5 lenses + confidence-scored):** 5 confirmed findings, all fixed: pino-convention violations in `AllExceptionsFilter`/`LoggingInterceptor`; non-HTTP context crashes in both filters; same gap in `RolesGuard`/`PermissionsGuard`; stale `debian12` references in the blueprint. Below-threshold extra: `TrimPipe` wired globally (was built but never registered)
