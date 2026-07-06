@@ -7,7 +7,10 @@ import { ASK_TOPICS } from './messaging.constants';
  * Kafka transport options shared by the producer client and the consumer microservice.
  * @param role Distinct consumer groups — the client's reply-consumer must not steal server messages.
  */
-export function kafkaOptions(config: ConfigService<Env, true>, role: 'client' | 'server'): KafkaOptions {
+export function kafkaOptions(
+  config: ConfigService<Env, true>,
+  role: 'client' | 'server',
+): KafkaOptions {
   const groupId = config.get('KAFKA_GROUP_ID', { infer: true });
   return {
     transport: Transport.KAFKA,

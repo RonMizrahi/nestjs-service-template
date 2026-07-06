@@ -45,8 +45,10 @@ describe('validateEnv', () => {
   it('requires SQS_QUEUE_URL when the sqs driver is selected', () => {
     expect(() => validateEnv({ MESSAGING_DRIVER: 'sqs' })).toThrow(/SQS_QUEUE_URL is required/);
     expect(
-      validateEnv({ MESSAGING_DRIVER: 'sqs', SQS_QUEUE_URL: 'http://localhost:4566/000000000000/q' })
-        .MESSAGING_DRIVER,
+      validateEnv({
+        MESSAGING_DRIVER: 'sqs',
+        SQS_QUEUE_URL: 'http://localhost:4566/000000000000/q',
+      }).MESSAGING_DRIVER,
     ).toBe('sqs');
   });
 

@@ -7,9 +7,7 @@ import { USER_CREATED_TOPIC } from '../messaging.constants';
 /** Kafka consumer for user events — bound only when MESSAGING_DRIVER=kafka (see main.ts). */
 @Controller()
 export class UserEventsController {
-  constructor(
-    @InjectPinoLogger(UserEventsController.name) private readonly logger: PinoLogger,
-  ) {}
+  constructor(@InjectPinoLogger(UserEventsController.name) private readonly logger: PinoLogger) {}
 
   /** Demo handler — replace with real side effects (welcome email, projections, …). */
   @EventPattern(USER_CREATED_TOPIC)

@@ -24,7 +24,10 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user', description: 'Creates a user and signs them in.' })
+  @ApiOperation({
+    summary: 'Register a new user',
+    description: 'Creates a user and signs them in.',
+  })
   @ApiBody({ type: RegisterDto })
   @ApiCreatedResponse({ type: AuthTokensDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })

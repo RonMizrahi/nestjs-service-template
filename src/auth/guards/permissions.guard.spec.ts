@@ -5,6 +5,7 @@ import { PermissionsGuard } from './permissions.guard';
 
 function contextWith(userPermissions?: Permission[]): ExecutionContext {
   return {
+    getType: () => 'http',
     getHandler: () => ({}),
     getClass: () => ({}),
     switchToHttp: () => ({
@@ -26,7 +27,9 @@ describe('PermissionsGuard', () => {
 
   it('allows a token holding all required permissions', () => {
     reflector.getAllAndOverride.mockReturnValue([Permission.UsersRead, Permission.UsersWrite]);
-    expect(guard.canActivate(contextWith([Permission.UsersRead, Permission.UsersWrite]))).toBe(true);
+    expect(guard.canActivate(contextWith([Permission.UsersRead, Permission.UsersWrite]))).toBe(
+      true,
+    );
   });
 
   it('denies when one of the required permissions is missing (ALL semantics)', () => {
@@ -37,5 +40,11 @@ describe('PermissionsGuard', () => {
   it('denies when the token carries no permissions claim', () => {
     reflector.getAllAndOverride.mockReturnValue([Permission.UsersRead]);
     expect(guard.canActivate(contextWith())).toBe(false);
+  });
+
+  it('passes non-HTTP contexts straight through (Kafka consumers)', () => {
+    const rpcContext = { getType: () => 'rpc' } as unknown as ExecutionContext;
+    expect(guard.canActivate(rpcContext)).toBe(true);
+    expect(reflector.getAllAndOverride).not.toHaveBeenCalled();
   });
 });

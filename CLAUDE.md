@@ -9,7 +9,7 @@ latest-stack, deprecation-free, decorator-heavy, and short.
 - **NestJS 11 / Express 5 / Node 24 LTS / TypeScript / npm**
 - **Data:** TypeORM 1.0 + Postgres (`synchronize:false`, migrations via `data-source.ts`)
 - **Cache:** @nestjs/cache-manager v3 + Keyv + @keyv/redis (TTL in **ms**, miss returns **undefined**)
-- **Auth:** @nestjs/jwt + passport-jwt + argon2id; global JwtAuthGuard + `@Public()`; RBAC via `@Roles()`+RolesGuard
+- **Auth:** @nestjs/jwt + passport-jwt + argon2id; global JwtAuthGuard + `@Public()`; authz via `@Roles()`+RolesGuard and `@RequirePermissions()`+PermissionsGuard (`permissions` claim derived from roles **at token issuance** — `src/auth/role-permissions.ts`)
 - **Messaging:** pluggable `MESSAGE_BUS` port — Kafka (built-in transport) / SQS (@ssut/nestjs-sqs), switched by `MESSAGING_DRIVER`
 - **Resilience:** cockatiel (retry+breaker+timeout, one policy per dependency); HTTP via @nestjs/axios
 - **Observability:** OTel (OTLP→Jaeger v2, preloaded `src/tracing.ts`), Prometheus `/metrics`, nestjs-pino JSON logs
@@ -21,6 +21,7 @@ latest-stack, deprecation-free, decorator-heavy, and short.
 ```bash
 npm run start:dev      # watch mode
 npm run build          # nest build
+npm run start:prod     # node --require ./dist/tracing dist/main (OTel preload)
 npm run test           # unit tests (Jest)
 npm run test:int       # integration tests (Testcontainers — Docker required)
 npm run lint           # eslint
@@ -65,7 +66,11 @@ data-source.ts   # standalone DataSource for the TypeORM CLI
 - Zipkin/Jaeger OTel exporters are deprecated — export OTLP.
 - Redis throttler storage = `@nest-lab/throttler-storage-redis` (not `@nestjs/...`).
 - SQS is NOT a built-in Nest transport.
+- **cockatiel is ESM-only** — runtime needs Node ≥24 `require(esm)`; both Jest configs transform it to CJS (`transformIgnorePatterns` whitelist + `.js` ts-jest transform).
+- **Hybrid app (HTTP + Kafka):** every HTTP-assuming global guard/filter checks `context.getType() !== 'http'` and passes through/rethrows — new global guards/filters must do the same or Kafka consumers crash.
+- `OTEL_ENABLED` accepts only literal `true`/`false` (the preload checks the literal; other stringbool spellings fail validation on purpose).
+- Raw `Keyv` providers get no Nest lifecycle — disconnect them in `onApplicationShutdown` (see `CachingModule`) or Redis reconnect loops hang Jest.
 
-## Active plan
+## Plan history
 
-`docs/plans/nestjs-service-template-05-07-2026-plan.md` — branch `plan/nestjs-service-template`, one PR at the end.
+`docs/plans/nestjs-service-template-05-07-2026-plan.md` — **COMPLETE** (06-07-2026): all 10 milestones on branch `plan/nestjs-service-template`, Gate A per milestone + holistic Gate B, single PR. Deviations and verification results recorded in the plan file.

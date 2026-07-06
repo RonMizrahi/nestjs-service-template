@@ -59,7 +59,10 @@ export class UsersController {
   @UseInterceptors(CacheInterceptor)
   @CacheKey(USERS_LIST_CACHE_KEY)
   @CacheTTL(USERS_LIST_CACHE_TTL_MS)
-  @ApiOperation({ summary: 'List all users', description: `Cached for ${USERS_LIST_CACHE_TTL_MS}ms.` })
+  @ApiOperation({
+    summary: 'List all users',
+    description: `Cached for ${USERS_LIST_CACHE_TTL_MS}ms.`,
+  })
   @ApiOkResponse({ type: UserResponseDto, isArray: true })
   @ApiResponse({ status: 401, description: 'Missing or invalid token' })
   @ApiResponse({ status: 403, description: 'Requires the admin role' })

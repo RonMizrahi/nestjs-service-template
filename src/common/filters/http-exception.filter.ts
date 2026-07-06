@@ -11,6 +11,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: HttpException, host: ArgumentsHost): void {
+    // HTTP-only envelope — RPC/event errors rethrow to Nest's transport handler
+    if (host.getType() !== 'http') throw exception;
+
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();

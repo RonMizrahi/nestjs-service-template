@@ -8,7 +8,10 @@ describe('NoopBus', () => {
 
   it('drops the event and logs at debug (happy path)', async () => {
     await expect(bus.publish('user.created')).resolves.toBeUndefined();
-    expect(debug).toHaveBeenCalledWith({ topic: 'user.created' }, 'Messaging disabled — event dropped');
+    expect(debug).toHaveBeenCalledWith(
+      { topic: 'user.created' },
+      'Messaging disabled — event dropped',
+    );
   });
 
   it('rejects ask — no transport configured', () => {

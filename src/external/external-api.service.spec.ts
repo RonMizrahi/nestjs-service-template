@@ -24,7 +24,9 @@ describe('ExternalApiService', () => {
 
   it('fetches through the policy and unwraps the response (happy path)', async () => {
     await expect(service.fetchTodo(1)).resolves.toEqual(todo);
-    expect(get).toHaveBeenCalledWith('/todos/1', { signal: expect.any(AbortSignal) as AbortSignal });
+    expect(get).toHaveBeenCalledWith('/todos/1', {
+      signal: expect.any(AbortSignal) as AbortSignal,
+    });
     expect(startTimer).toHaveBeenCalledWith({ operation: 'fetchTodo' });
     expect(endTimer).toHaveBeenCalledWith({ outcome: 'success' });
   });

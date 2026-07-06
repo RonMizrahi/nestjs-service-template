@@ -12,9 +12,7 @@ describe('HttpThrottlerGuard', () => {
 
   it('delegates HTTP contexts to the stock throttler (happy path)', async () => {
     const context = { getType: () => 'http' } as unknown as ExecutionContext;
-    const superSpy = jest
-      .spyOn(ThrottlerGuard.prototype, 'canActivate')
-      .mockResolvedValue(true);
+    const superSpy = jest.spyOn(ThrottlerGuard.prototype, 'canActivate').mockResolvedValue(true);
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(superSpy).toHaveBeenCalledWith(context);

@@ -13,7 +13,11 @@ const FAST = {
 describe('createResiliencePolicy', () => {
   it('retries transient failures until success (happy path)', async () => {
     // breaker threshold above the failure count — the retries must not trip it
-    const policy = createResiliencePolicy({ ...FAST, maxRetryAttempts: 5, consecutiveFailures: 10 });
+    const policy = createResiliencePolicy({
+      ...FAST,
+      maxRetryAttempts: 5,
+      consecutiveFailures: 10,
+    });
     const fn = jest
       .fn<Promise<string>, []>()
       .mockRejectedValueOnce(new Error('boom-1'))

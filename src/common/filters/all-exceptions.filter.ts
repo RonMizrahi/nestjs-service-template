@@ -1,6 +1,7 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus, Logger } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import type { Request } from 'express';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 /**
  * Catch-all safety net: any non-HttpException becomes a clean 500 without
@@ -8,18 +9,24 @@ import type { Request } from 'express';
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name);
-
-  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+  constructor(
+    @InjectPinoLogger(AllExceptionsFilter.name) private readonly logger: PinoLogger,
+    private readonly httpAdapterHost: HttpAdapterHost,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
+    // HTTP-only envelope — RPC/event errors rethrow to Nest's transport handler
+    if (host.getType() !== 'http') throw exception;
+
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();
     const status = HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const stack = exception instanceof Error ? exception.stack : undefined;
-    this.logger.error(`Unhandled exception on ${request.method} ${request.url}`, stack);
+    this.logger.error(
+      { err: exception, method: request.method, url: request.url },
+      'Unhandled exception',
+    );
 
     httpAdapter.reply(
       ctx.getResponse(),

@@ -11,9 +11,7 @@ const userCreatedEventSchema = z.object({ userId: z.string(), email: z.string() 
 /** SQS consumer for user events — polls only when MESSAGING_DRIVER=sqs. */
 @Injectable()
 export class UserEventsSqsHandler {
-  constructor(
-    @InjectPinoLogger(UserEventsSqsHandler.name) private readonly logger: PinoLogger,
-  ) {}
+  constructor(@InjectPinoLogger(UserEventsSqsHandler.name) private readonly logger: PinoLogger) {}
 
   /**
    * Demo handler — parses and logs the event.

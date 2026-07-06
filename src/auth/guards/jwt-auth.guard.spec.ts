@@ -27,7 +27,10 @@ describe('JwtAuthGuard', () => {
   it('delegates to the passport JWT flow otherwise', () => {
     reflector.getAllAndOverride.mockReturnValue(undefined);
     const superSpy = jest
-      .spyOn(Object.getPrototypeOf(JwtAuthGuard.prototype) as { canActivate: () => boolean }, 'canActivate')
+      .spyOn(
+        Object.getPrototypeOf(JwtAuthGuard.prototype) as { canActivate: () => boolean },
+        'canActivate',
+      )
       .mockReturnValue(true);
 
     expect(guard.canActivate(context)).toBe(true);

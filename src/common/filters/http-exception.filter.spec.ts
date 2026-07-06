@@ -10,6 +10,7 @@ describe('HttpExceptionFilter', () => {
 
   const response = {};
   const host = {
+    getType: () => 'http',
     switchToHttp: () => ({
       getResponse: () => response,
       getRequest: () => ({ url: '/v1/things', id: correlationId }),
@@ -33,5 +34,13 @@ describe('HttpExceptionFilter', () => {
       }),
       HttpStatus.BAD_REQUEST,
     );
+  });
+
+  it('rethrows on non-HTTP contexts (Kafka events) instead of replying', () => {
+    const rpcHost = { getType: () => 'rpc' } as unknown as ArgumentsHost;
+    const boom = new BadRequestException('consumer failure');
+
+    expect(() => filter.catch(boom, rpcHost)).toThrow(boom);
+    expect(reply).not.toHaveBeenCalled();
   });
 });

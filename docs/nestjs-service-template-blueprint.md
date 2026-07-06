@@ -103,7 +103,7 @@ jest 30.4.2   ts-jest 29.x   @nestjs/testing 11.1.27   supertest 7.2.2   testcon
 ```
 ### Docker images
 ```
-node:24-bookworm-slim (builder)   gcr.io/distroless/nodejs24-debian12:nonroot (runtime)
+node:24-bookworm-slim (builder)   gcr.io/distroless/nodejs24-debian13:nonroot (runtime)
 postgres:18-alpine   adminer:5
 redis:8-alpine       redis/redisinsight:latest
 apache/kafka:4.2.0 (KRaft, no ZooKeeper)   ghcr.io/kafbat/kafka-ui:latest
@@ -247,7 +247,7 @@ exporting **OTLP** to Jaeger v2; `nestjs-otel` `@Span()` for custom spans; `@wil
 `SimpleSpanProcessor` in prod (use batch); `pino-pretty` transport in prod; starting the SDK after `@nestjs/core` loads.
 
 ### 5.11 Ops — Docker + compose + tests  *(Spring: Dockerfile, compose, test suite)*
-Multi‑stage Dockerfile (`node:24-bookworm-slim` builder → `distroless/nodejs24-debian12:nonroot` runtime,
+Multi‑stage Dockerfile (`node:24-bookworm-slim` builder → `distroless/nodejs24-debian13:nonroot` runtime,
 `npm ci`/`pnpm`, `--omit=dev`, `USER nonroot`, ~120–180 MB). `compose.yaml` (no `version:` key) boots
 Postgres+Adminer, Redis+RedisInsight, Kafka(KRaft)+kafbat‑UI, LocalStack(SQS), Jaeger — all with healthchecks +
 `depends_on: condition: service_healthy`. Tests: Jest unit (`Test.createTestingModule` + `overrideProvider`),
@@ -289,7 +289,7 @@ top‑level `version:` key; **`provectuslabs/kafka-ui`** (abandoned, RCE CVE‑2
 These are the highest‑value findings — where "latest, no deprecated" actually bites, including corrections the fact‑checkers made to the initial research.
 
 1. **pnpm 11, not 10** — verifier **REFUTED** the pnpm‑10 recommendation: pnpm 11 is current (`latest` = 11.10.0). Requires Node 22+ (fine on Node 24). → pin `pnpm@11.x`.
-2. **Node 24, not 22** — Node 24 is the current **Active LTS**; Node 22 is already Maintenance LTS ("don't pin for new work"). The Docker base is reconciled to **`distroless/nodejs24-debian12`** (the ops researcher's conservative `node:22` was overridden to stay consistent).
+2. **Node 24, not 22** — Node 24 is the current **Active LTS**; Node 22 is already Maintenance LTS ("don't pin for new work"). The Docker base is reconciled to **`distroless/nodejs24-debian13`** (the ops researcher's conservative `node:22` was overridden to stay consistent).
 3. **kafkajs is effectively unmaintained** — `2.2.4`, last published **2023‑02‑27** (>3 yrs). It still works and is what the built‑in transport requires, but for greenfield/perf‑critical use, `@confluentinc/kafka-javascript` (librdkafka, KafkaJS‑compatible API, official Confluent support) via a `CustomTransportStrategy` is the maintained path.
 4. **SQS is NOT a built‑in Nest transport** — confirmed. Built‑in transporters: TCP, Redis, RabbitMQ, NATS, MQTT, Kafka, gRPC. SQS needs `@ssut/nestjs-sqs` (last publish 2025‑02, stable/slow) or a custom strategy.
 5. **cache‑manager v6+ = Keyv** — the biggest migration hazard. Every old `store:` package is deprecated (`cache-manager-ioredis-yet` is npm‑deprecated with "we now are using Keyv"). TTL is **milliseconds**; cache miss returns **`undefined`**. (Minor verifier nit: TTL became ms in v5, not v4/v5 — irrelevant to the v6/v7 code.)

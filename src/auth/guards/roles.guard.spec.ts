@@ -5,6 +5,7 @@ import { RolesGuard } from './roles.guard';
 
 function contextWith(roles: Role[] | undefined, userRoles?: Role[]): ExecutionContext {
   return {
+    getType: () => 'http',
     getHandler: () => ({}),
     getClass: () => ({}),
     switchToHttp: () => ({
@@ -37,5 +38,11 @@ describe('RolesGuard', () => {
   it('denies when no user is on the request', () => {
     reflector.getAllAndOverride.mockReturnValue([Role.Admin]);
     expect(guard.canActivate(contextWith([Role.Admin]))).toBe(false);
+  });
+
+  it('passes non-HTTP contexts straight through (Kafka consumers)', () => {
+    const rpcContext = { getType: () => 'rpc' } as unknown as ExecutionContext;
+    expect(guard.canActivate(rpcContext)).toBe(true);
+    expect(reflector.getAllAndOverride).not.toHaveBeenCalled();
   });
 });

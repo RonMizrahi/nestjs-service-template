@@ -15,6 +15,7 @@ import { CachingModule } from './cache/caching.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { HttpThrottlerGuard } from './common/guards/http-throttler.guard';
+import { TrimPipe } from './common/pipes/trim.pipe';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { validateEnv, type Env } from './config/env.schema';
 import { ExternalModule } from './external/external.module';
@@ -77,6 +78,8 @@ import { UsersModule } from './users/users.module';
     }),
   ],
   providers: [
+    // trims string route/query params BEFORE validation sees them
+    { provide: APP_PIPE, useClass: TrimPipe },
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({
