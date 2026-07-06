@@ -20,6 +20,12 @@ export const envSchema = z.object({
   SQS_REGION: z.string().default('us-east-1'),
   SQS_ENDPOINT: z.string().optional(), // e.g. http://localhost:4566 for LocalStack
   EXTERNAL_API_URL: z.string().default('https://jsonplaceholder.typicode.com'),
+  // read by src/tracing.ts BEFORE Nest boots (node --require) — the preload checks
+  // the literal 'true', so only true/false validate (OTEL_ENABLED=1 must fail fast,
+  // not pass validation while tracing silently stays off)
+  OTEL_ENABLED: z.stringbool({ truthy: ['true'], falsy: ['false'] }).default(false),
+  OTEL_SERVICE_NAME: z.string().default('nestjs-service-template'),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(), // SDK default: http://localhost:4318
 });
 
 /** Typed shape of the validated environment — use with `ConfigService<Env, true>`. */

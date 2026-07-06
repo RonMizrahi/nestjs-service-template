@@ -1,5 +1,6 @@
 import { ClassSerializerInterceptor, Module, ValidationPipe } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { trace } from '@opentelemetry/api';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { seconds, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -18,6 +19,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { validateEnv, type Env } from './config/env.schema';
 import { ExternalModule } from './external/external.module';
 import { HealthModule } from './health/health.module';
+import { ObservabilityModule } from './observability/observability.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -43,6 +45,7 @@ import { UsersModule } from './users/users.module';
     CachingModule,
     ExternalModule,
     HealthModule,
+    ObservabilityModule,
     UsersModule,
     AuthModule,
     LoggerModule.forRootAsync({
@@ -56,7 +59,14 @@ import { UsersModule } from './users/users.module';
             res.setHeader('x-request-id', requestId);
             return requestId;
           },
-          customProps: (req) => ({ correlationId: req.id }),
+          customProps: (req) => {
+            const span = trace.getActiveSpan()?.spanContext();
+            return {
+              correlationId: req.id,
+              // correlate logs ↔ traces when OTel is enabled
+              ...(span ? { trace_id: span.traceId, span_id: span.spanId } : {}),
+            };
+          },
           redact: ['req.headers.authorization', 'req.headers.cookie'],
           transport:
             config.get('NODE_ENV', { infer: true }) === 'development'

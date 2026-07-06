@@ -35,6 +35,13 @@ describe('validateEnv', () => {
     expect(validateEnv({}).MESSAGING_DRIVER).toBe('none');
   });
 
+  it('accepts only the literal OTEL_ENABLED spellings the tracing preload understands', () => {
+    expect(validateEnv({ OTEL_ENABLED: 'true' }).OTEL_ENABLED).toBe(true);
+    expect(validateEnv({ OTEL_ENABLED: 'false' }).OTEL_ENABLED).toBe(false);
+    // '1'/'yes' would pass a lenient stringbool but be ignored by tracing.ts — fail fast instead
+    expect(() => validateEnv({ OTEL_ENABLED: '1' })).toThrow(/Invalid environment/);
+  });
+
   it('requires SQS_QUEUE_URL when the sqs driver is selected', () => {
     expect(() => validateEnv({ MESSAGING_DRIVER: 'sqs' })).toThrow(/SQS_QUEUE_URL is required/);
     expect(

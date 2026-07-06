@@ -39,4 +39,11 @@ describe('Application bootstrap (smoke)', () => {
     expect(body.correlationId).toEqual(expect.any(String));
     expect(response.headers['x-request-id']).toBe(body.correlationId);
   });
+
+  it('serves Prometheus metrics publicly on the unversioned path (happy path)', async () => {
+    const response = await request(app.getHttpServer()).get('/metrics').expect(200);
+
+    expect(response.text).toContain('process_cpu_user_seconds_total');
+    expect(response.text).toContain('app_external_api_duration_seconds');
+  });
 });

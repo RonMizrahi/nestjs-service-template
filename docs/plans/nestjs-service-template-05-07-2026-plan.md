@@ -101,11 +101,12 @@ Every milestone ends with: **unit tests green → integration tests green (where
 - Deviations (verified during Gate A): policy provided via `EXTERNAL_API_POLICY` token (testable DI, breaker state spans calls); factory takes per-dependency tuning knobs; cooperative timeout's `AbortSignal` is passed into axios so cancellation is real; cockatiel is **ESM-only** — runtime relies on Node ≥24 native `require(esm)` (verified against compiled dist; documented at the import) and both Jest configs transform it to CJS (`transformIgnorePatterns` whitelist + `.js` ts-jest transform); no integration test for the demo route (would hit the live external API — unit-covered with mocked HttpService)
 
 ### M9 — Observability (OTel + Prometheus)
-- [ ] `src/tracing.ts` — NodeSDK + auto-instrumentations + OTLP proto exporter (preload via `node --require`)
-- [ ] `nestjs-otel` OpenTelemetryModule + `@Span` demo; trace_id/span_id into pino customProps
-- [ ] `@willsoto/nestjs-prometheus` — `/metrics` + one custom histogram
-- [ ] Unit tests: metrics provider wiring → verify: `npm run test`
-- [ ] code-quality-pipeline → commit
+- [x] `src/tracing.ts` — NodeSDK + auto-instrumentations + OTLP proto exporter (preload via `node --require`)
+- [x] `nestjs-otel` OpenTelemetryModule + `@Span` demo; trace_id/span_id into pino customProps
+- [x] `@willsoto/nestjs-prometheus` — `/metrics` + one custom histogram
+- [x] Unit tests: metrics provider wiring → verify: `npm run test`
+- [x] code-quality-pipeline → commit
+- Deviations (verified during Gate A): custom `MetricsController` is `@Public` + `VERSION_NEUTRAL` + Swagger-excluded (scrapers hit `/metrics`, not `/v1/metrics`); histogram `app_external_api_duration_seconds{operation,outcome}` recorded in `ExternalApiService.fetchTodo` (also the `@Span` demo); `OTEL_ENABLED` schema restricted to literal `true|false` so spellings the preload ignores (`1`, `yes`) fail validation instead of silently disabling tracing; preload smoke-tested against compiled dist in both modes; `/metrics` covered by an integration happy-path (23 int tests total)
 
 ### M10 — Docker, compose, CI, docs, integration suite
 - [ ] Multi-stage `Dockerfile` (node:24 slim builder → distroless nodejs24 nonroot)
