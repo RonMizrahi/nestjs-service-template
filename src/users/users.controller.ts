@@ -23,7 +23,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Permission } from '../common/enums/permission.enum';
 import { Role } from '../common/enums/role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -39,6 +41,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @RequirePermissions(Permission.UsersWrite)
   @ApiOperation({ summary: 'Create a user', description: 'Admin-only user provisioning.' })
   @ApiBody({ type: CreateUserDto })
   @ApiCreatedResponse({ type: UserResponseDto })
@@ -51,6 +54,7 @@ export class UsersController {
   }
 
   @Get()
+  @RequirePermissions(Permission.UsersRead)
   // declarative response caching — mutations evict the key in UsersService
   @UseInterceptors(CacheInterceptor)
   @CacheKey(USERS_LIST_CACHE_KEY)
@@ -64,6 +68,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @RequirePermissions(Permission.UsersRead)
   @ApiOperation({ summary: 'Fetch one user' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ type: UserResponseDto })
@@ -76,6 +81,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @RequirePermissions(Permission.UsersWrite)
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiBody({ type: UpdateUserDto })
@@ -92,6 +98,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @RequirePermissions(Permission.UsersWrite)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', format: 'uuid' })

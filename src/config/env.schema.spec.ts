@@ -31,6 +31,18 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ PORT: '655350' })).toThrow(/Invalid environment/);
   });
 
+  it('defaults MESSAGING_DRIVER to none', () => {
+    expect(validateEnv({}).MESSAGING_DRIVER).toBe('none');
+  });
+
+  it('requires SQS_QUEUE_URL when the sqs driver is selected', () => {
+    expect(() => validateEnv({ MESSAGING_DRIVER: 'sqs' })).toThrow(/SQS_QUEUE_URL is required/);
+    expect(
+      validateEnv({ MESSAGING_DRIVER: 'sqs', SQS_QUEUE_URL: 'http://localhost:4566/000000000000/q' })
+        .MESSAGING_DRIVER,
+    ).toBe('sqs');
+  });
+
   it('requires explicit DATABASE_URL and JWT_SECRET in production', () => {
     const secret = crypto.randomUUID().repeat(2);
     const url = 'postgres://u:p@db:5432/app';

@@ -1,6 +1,7 @@
 import { getLoggerToken } from 'nestjs-pino';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { Permission } from '../common/enums/permission.enum';
 import { Role } from '../common/enums/role.enum';
 import { User } from '../users/entities/user.entity';
 import { UsersRepository } from '../users/users.repository';
@@ -58,6 +59,7 @@ describe('AuthService', () => {
       userId: id,
       email,
       roles: [Role.User],
+      permissions: [],
     });
   });
 
@@ -78,13 +80,19 @@ describe('AuthService', () => {
     await expect(service.validateCredentials(email, 'wrong')).resolves.toBeNull();
   });
 
-  it('signs the JWT payload with sub/email/roles', async () => {
-    await service.issueTokens({ userId: id, email, roles: [Role.Admin] });
+  it('signs the JWT payload with sub/email/roles/permissions', async () => {
+    await service.issueTokens({
+      userId: id,
+      email,
+      roles: [Role.Admin],
+      permissions: [Permission.UsersRead, Permission.UsersWrite],
+    });
 
     expect(jwtService.signAsync).toHaveBeenCalledWith({
       sub: id,
       email,
       roles: [Role.Admin],
+      permissions: [Permission.UsersRead, Permission.UsersWrite],
     });
   });
 });

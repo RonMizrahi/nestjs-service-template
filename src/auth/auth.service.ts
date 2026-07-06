@@ -7,6 +7,7 @@ import { AuthTokensDto } from './dto/auth-response.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { PasswordService } from './password.service';
+import { permissionsForRoles } from './role-permissions';
 
 /** Registration, credential validation, and token issuing. */
 @Injectable()
@@ -27,7 +28,12 @@ export class AuthService {
     const passwordHash = await this.passwordService.hash(dto.password);
     const user = await this.usersRepository.create({ email: dto.email, passwordHash });
     this.logger.info({ userId: user.id }, 'User registered');
-    return this.issueTokens({ userId: user.id, email: user.email, roles: user.roles });
+    return this.issueTokens({
+      userId: user.id,
+      email: user.email,
+      roles: user.roles,
+      permissions: permissionsForRoles(user.roles),
+    });
   }
 
   /**
@@ -46,12 +52,22 @@ export class AuthService {
       this.logger.warn({ userId: user.id }, 'Login failed');
       return null;
     }
-    return { userId: user.id, email: user.email, roles: user.roles };
+    return {
+      userId: user.id,
+      email: user.email,
+      roles: user.roles,
+      permissions: permissionsForRoles(user.roles),
+    };
   }
 
   /** Signs an access token for the authenticated principal. */
   async issueTokens(user: AuthenticatedUser): Promise<AuthTokensDto> {
-    const payload: JwtPayload = { sub: user.userId, email: user.email, roles: user.roles };
+    const payload: JwtPayload = {
+      sub: user.userId,
+      email: user.email,
+      roles: user.roles,
+      permissions: user.permissions,
+    };
     return { accessToken: await this.jwtService.signAsync(payload) };
   }
 }

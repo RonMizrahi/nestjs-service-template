@@ -4,6 +4,8 @@ import { PasswordService } from '../auth/password.service';
 import { AppCacheService } from '../cache/app-cache.service';
 import { ResourceNotFoundException } from '../common/exceptions/app.exception';
 import { Role } from '../common/enums/role.enum';
+import { MESSAGE_BUS } from '../messaging/message-bus';
+import { USER_CREATED_TOPIC } from '../messaging/messaging.constants';
 import { User } from './entities/user.entity';
 import { UsersRepository } from './users.repository';
 import { UsersService } from './users.service';
@@ -30,6 +32,7 @@ describe('UsersService', () => {
   };
   const passwordService = { hash: jest.fn(() => Promise.resolve('new-hash')) };
   const appCache = { evict: jest.fn(() => Promise.resolve()) };
+  const messageBus = { publish: jest.fn(() => Promise.resolve()) };
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
 
   let service: UsersService;
@@ -42,6 +45,7 @@ describe('UsersService', () => {
         { provide: UsersRepository, useValue: usersRepository },
         { provide: PasswordService, useValue: passwordService },
         { provide: AppCacheService, useValue: appCache },
+        { provide: MESSAGE_BUS, useValue: messageBus },
         { provide: getLoggerToken(UsersService.name), useValue: logger },
       ],
     }).compile();
@@ -60,6 +64,19 @@ describe('UsersService', () => {
     expect(result.id).toBe(id);
     expect(result).not.toHaveProperty('passwordHash');
     expect(appCache.evict).toHaveBeenCalled();
+    expect(messageBus.publish).toHaveBeenCalledWith(
+      USER_CREATED_TOPIC,
+      expect.objectContaining({ userId: id }),
+    );
+  });
+
+  it('creation survives a failing event publish', async () => {
+    messageBus.publish.mockRejectedValueOnce(new Error('broker down'));
+
+    const result = await service.create({ email, password: 'plain', roles: [Role.Admin] });
+
+    expect(result.id).toBe(id);
+    expect(logger.error).toHaveBeenCalled();
   });
 
   it('lists users as response DTOs', async () => {

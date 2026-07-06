@@ -23,6 +23,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   /** Maps verified claims onto the request principal. */
   validate(payload: JwtPayload): AuthenticatedUser {
-    return { userId: payload.sub, email: payload.email, roles: payload.roles };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      roles: payload.roles,
+      // ?? [] tolerates tokens issued before the permissions claim existed (≤ JWT_EXPIRES_IN old)
+      permissions: payload.permissions ?? [],
+    };
   }
 }

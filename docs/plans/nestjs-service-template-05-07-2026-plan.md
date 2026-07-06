@@ -80,16 +80,17 @@ Every milestone ends with: **unit tests green → integration tests green (where
 - Deviations (verified during Gate A): dedicated `CACHE_PROBE` Keyv with `throwOnErrors` (main cache + keyv/@keyv/redis all swallow errors — probing via `CACHE_MANAGER` would always report up); `CachingModule.onApplicationShutdown` disconnects the probe (raw Keyv providers get no Nest lifecycle — leaked node-redis reconnect loop hung Jest); readiness `down` returns generic `'cache unreachable'` and logs the raw driver error server-side (public endpoint must not leak internal hosts/auth state)
 
 ### M7 — Messaging (pluggable Kafka + SQS) + permissions-based authz
-- [ ] Permissions layer (decision 05-07: claims-based, no external RBAC — zero per-request hops, zero-trust at the service): `Permission` enum + role→permission map applied at **token issuance** (`permissions` claim), `@RequirePermissions()` decorator + `PermissionsGuard` alongside `@Roles()`; changing role→permission mapping = auth-side change only
-- [ ] Unit tests: permissions guard (allow/deny/missing claim), issuance mapping → verify: `npm run test`
-- [ ] `messaging/message-bus.ts` — `MESSAGE_BUS` token + `MessageBus` port (publish/ask)
-- [ ] `messaging/kafka.bus.ts` — ClientKafka wrapper (connect/subscribeToResponseOf lifecycle)
-- [ ] `messaging/sqs.bus.ts` — @ssut/nestjs-sqs SqsService wrapper (AWS SDK v3)
-- [ ] Consumers: Kafka `@EventPattern` controller + `@SqsMessageHandler` handler (demo `user.created` event)
-- [ ] `MessagingModule` — env switch `MESSAGING_DRIVER=kafka|sqs|none`, only selected driver instantiated
-- [ ] Emit `user.created` from UsersService via the port
-- [ ] Unit tests: bus selection factory, each bus with mocked client, consumer handlers → verify: `npm run test`
-- [ ] code-quality-pipeline → commit
+- [x] Permissions layer (decision 05-07: claims-based, no external RBAC — zero per-request hops, zero-trust at the service): `Permission` enum + role→permission map applied at **token issuance** (`permissions` claim), `@RequirePermissions()` decorator + `PermissionsGuard` alongside `@Roles()`; changing role→permission mapping = auth-side change only
+- [x] Unit tests: permissions guard (allow/deny/missing claim), issuance mapping → verify: `npm run test`
+- [x] `messaging/message-bus.ts` — `MESSAGE_BUS` token + `MessageBus` port (publish/ask)
+- [x] `messaging/kafka.bus.ts` — ClientKafka wrapper (connect/subscribeToResponseOf lifecycle)
+- [x] `messaging/sqs.bus.ts` — @ssut/nestjs-sqs SqsService wrapper (AWS SDK v3)
+- [x] Consumers: Kafka `@EventPattern` controller + `@SqsMessageHandler` handler (demo `user.created` event)
+- [x] `MessagingModule` — env switch `MESSAGING_DRIVER=kafka|sqs|none`, only selected driver instantiated
+- [x] Emit `user.created` from UsersService via the port
+- [x] Unit tests: bus selection factory, each bus with mocked client, consumer handlers → verify: `npm run test`
+- [x] code-quality-pipeline → commit
+- Deviations (verified during Gate A): `ask()` on SQS/none throws `NotImplementedException` (no reply channel); global HTTP guards made context-aware — `JwtAuthGuard` early-returns and `HttpThrottlerGuard` (new, replaces stock `ThrottlerGuard`) passes non-HTTP contexts so Kafka consumers aren't rejected/crashed by `res.header()`; Kafka producer client uses `producerOnlyMode` while `ASK_TOPICS` is empty (a failing consumer group-join must not break publish); SQS handler validates wire payloads with Zod at the boundary; `user.created` publish failures are logged, never fail user creation
 
 ### M8 — Resilience & external HTTP
 - [ ] `external/resilience.ts` — cockatiel wrap(retry+breaker+timeout) built once per dependency

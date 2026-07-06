@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Permission } from '../../common/enums/permission.enum';
 import { Role } from '../../common/enums/role.enum';
 
 export class AuthTokensDto {
@@ -15,4 +16,7 @@ export class ProfileDto {
 
   @ApiProperty({ enum: Role, isArray: true })
   roles!: Role[];
+
+  @ApiProperty({ enum: Permission, isArray: true, description: 'Granted at token issuance' })
+  permissions!: Permission[];
 }

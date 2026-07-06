@@ -12,6 +12,13 @@ export const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   REDIS_URL: z.string().optional(), // unset → in-memory cache (dev/tests without Redis)
   CACHE_TTL_MS: z.coerce.number().int().positive().default(30_000),
+  MESSAGING_DRIVER: z.enum(['kafka', 'sqs', 'none']).default('none'),
+  KAFKA_BROKERS: z.string().default('localhost:9092'), // comma-separated
+  KAFKA_CLIENT_ID: z.string().default('nestjs-service-template'),
+  KAFKA_GROUP_ID: z.string().default('nestjs-service-template'),
+  SQS_QUEUE_URL: z.string().optional(), // required when MESSAGING_DRIVER=sqs
+  SQS_REGION: z.string().default('us-east-1'),
+  SQS_ENDPOINT: z.string().optional(), // e.g. http://localhost:4566 for LocalStack
 });
 
 /** Typed shape of the validated environment — use with `ConfigService<Env, true>`. */
@@ -28,6 +35,11 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     if (raw.NODE_ENV === 'production' && !raw[key]) {
       throw new Error(`Invalid environment configuration — ${key} is required in production`);
     }
+  }
+  if (raw.MESSAGING_DRIVER === 'sqs' && !raw.SQS_QUEUE_URL) {
+    throw new Error(
+      'Invalid environment configuration — SQS_QUEUE_URL is required when MESSAGING_DRIVER=sqs',
+    );
   }
   const parsed = envSchema.safeParse(raw);
   if (!parsed.success) {

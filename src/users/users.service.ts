@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { PasswordService } from '../auth/password.service';
 import { AppCacheService } from '../cache/app-cache.service';
 import { ResourceNotFoundException } from '../common/exceptions/app.exception';
+import { UserCreatedEvent } from '../messaging/events/user-created.event';
+import { MESSAGE_BUS, type MessageBus } from '../messaging/message-bus';
+import { USER_CREATED_TOPIC } from '../messaging/messaging.constants';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -20,6 +23,7 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
     private readonly passwordService: PasswordService,
     private readonly appCache: AppCacheService,
+    @Inject(MESSAGE_BUS) private readonly messageBus: MessageBus,
   ) {}
 
   /**
@@ -35,6 +39,12 @@ export class UsersService {
     });
     this.logger.info({ userId: user.id }, 'User created');
     await this.appCache.evict(USERS_LIST_CACHE_KEY);
+    try {
+      await this.messageBus.publish(USER_CREATED_TOPIC, new UserCreatedEvent(user.id, user.email));
+    } catch (error) {
+      // a broker outage must never fail user creation
+      this.logger.error({ err: error }, 'Failed to publish user.created');
+    }
     return new UserResponseDto(user);
   }
 
