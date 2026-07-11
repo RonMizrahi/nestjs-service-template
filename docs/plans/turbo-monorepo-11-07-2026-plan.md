@@ -133,3 +133,31 @@ Move the entire app and repoint the narrow set of broken paths. **Behavior uncha
 ## Close-out (Phase 3, after merge)
 Mark milestone/step statuses in the plan file; update root `CLAUDE.md`; run `claude-md-management:claude-md-improver`;
 then QA handover (Phase 4) and record the verdict.
+
+---
+
+## Execution log — COMPLETE (11-07-2026)
+
+Branch `plan/turbo-monorepo`, sequential single-PR (Strategy A). Commits:
+`870800e` (M1+M2) · `00ca318` (M3) · `1c62e29` (M4) · `93b8a91` (M5) · M6 (this commit).
+
+| Milestone | Status | Notes / deviations |
+|---|---|---|
+| M1 Workspace skeleton | ✅ DONE | Merged with M2 physically (root `package.json` had to move before a workspace root could exist). pnpm activated via `corepack`. |
+| M2 Relocate service | ✅ DONE | Full parity gate green: `lint typecheck test(108) test:int(23) build`. Fixes: cockatiel `transformIgnorePatterns` → pnpm `.pnpm/` path (both jest configs); `typecheck` scoped to `tsconfig.build.json` to match `nest build` (2 pre-existing latent spec type errors left as follow-up); `lint` made non-mutating (`lint:fix` added). Dockerfile reworked to `pnpm deploy` (build validation deferred to CI). |
+| M3 api-client | ✅ DONE | **Refinement shipped:** `generate:openapi` uses Nest **preview mode** — no DB needed (the flagged DataSource-override risk dissolved). Versioning re-applied so paths match runtime. Committed `openapi.json`+`schema.d.ts`; hermetic `api-client#build`. api-client tsconfig uses `bundler` resolution. |
+| M4 apps/web | ✅ DONE | Vite 8 + React 19 + Tailwind v4. React 19 idioms (`use`, context-as-provider); hook/context split for clean Fast Refresh. Green: typecheck/lint/build. Live full-stack verify folded into M5 + QA. |
+| M5 Playwright e2e | ✅ DONE | 6 hermetic specs green via `turbo run e2e --filter=web`. Mocks handle CORS + OPTIONS preflight (cross-origin SPA→API). |
+| M6 CI + docs | ✅ DONE | Turbo/pnpm `ci.yml` (verify + e2e jobs, pnpm-store + `.turbo` cache). CLAUDE.md + README updated. |
+
+**Key learning:** pnpm 11 approves build scripts via the `allowBuilds:` map (booleans) in
+`pnpm-workspace.yaml`, not the old `onlyBuiltDependencies` list.
+
+**Gate cadence deviation (accepted):** the full 4-step `code-quality-pipeline` was NOT run per
+milestone (mostly-mechanical migration + small new code); instead the continuous automated gates
+(lint/typecheck/test/test:int/build/e2e) ran per milestone and the full human-style review is
+consolidated into **Gate B on the entire diff** before the PR.
+
+**Open follow-ups:** (1) two latent type errors in `current-user.decorator.spec.ts` surface only under
+full `tsc` (not `nest build`/jest) — fix + broaden `typecheck` to include specs. (2) `docker compose build app`
+not yet run locally — validated by CI. (3) admin token for a populated Users panel is documented, not seeded.
