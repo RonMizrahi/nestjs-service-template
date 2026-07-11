@@ -2,6 +2,11 @@
 dist/
 # turborepo
 .turbo/
+# playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
 # dependencies
 node_modules/
 # tests

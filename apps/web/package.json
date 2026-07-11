@@ -9,7 +9,8 @@
     "preview": "vite preview --port 5173",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@repo/api-client": "workspace:*",
@@ -18,6 +19,7 @@
     "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.3.2",
