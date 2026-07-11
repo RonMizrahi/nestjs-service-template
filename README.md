@@ -10,6 +10,36 @@ Vite + React 19 + Tailwind SPA in `apps/web` calls a few endpoints through
 `@repo/api-client` (types generated from the service's OpenAPI spec). Shared
 tsconfig/eslint live in `packages/*`; Turbo runs lint/typecheck/test/build with caching.
 
+## Workspace
+
+| Package | Path | What it is |
+| --- | --- | --- |
+| `service` | `apps/service` | NestJS 11 API — all backend code, tests, Dockerfile, migrations |
+| `web` | `apps/web` | Vite + React 19 SPA — logs in and calls a few endpoints via the generated client |
+| `@repo/api-client` | `packages/api-client` | openapi-fetch client + types **generated** from the service's OpenAPI spec |
+| `@repo/eslint-config` | `packages/eslint-config` | shared flat ESLint config (base / node / react variants) |
+| `@repo/typescript-config` | `packages/typescript-config` | shared tsconfig bases (base / nest / react) |
+
+## Versions (pinned)
+
+| Layer | Package(s) | Version |
+| --- | --- | --- |
+| Monorepo | pnpm · Turborepo | 11.11 · 2.x |
+| Runtime | Node.js | ≥ 24 LTS |
+| Tooling | TypeScript · ESLint · Prettier | 5.9 · 10.6 · 3.9 |
+| Backend | NestJS (core + platform-express) | 11.1 |
+| Backend | TypeORM · pg · Postgres | 1.0 · 8.22 · 18 |
+| Backend | argon2 · zod · cockatiel | 0.44 · 4.4 · 4.0 |
+| Backend | @nestjs/swagger · throttler · keyv | 11.4 · 6.5 · 5.6 |
+| Backend | kafkajs · @aws-sdk/client-sqs | 2.2 · 3.x |
+| Backend | @opentelemetry/sdk-node · nestjs-pino | 0.220 · 4.6 |
+| Frontend | React · react-dom | 19.2 |
+| Frontend | Vite · @vitejs/plugin-react | 8.1 · 6.0 |
+| Frontend | Tailwind CSS · @tailwindcss/vite | 4.3 |
+| Frontend | react-router-dom | 7.18 |
+| Client | openapi-fetch · openapi-typescript | 0.17 · 7.13 |
+| Tests | Jest · Testcontainers · Playwright | 30 · 12 · 1.61 |
+
 ## Features
 
 - **HTTP** — Express 5, helmet, CORS, URI versioning (`/v1/...`), global validation
@@ -45,13 +75,31 @@ pnpm --filter web dev             # SPA on :5173 (calls the service)
 docker compose up --build
 ```
 
-| UI           | URL                    |
-| ------------ | ---------------------- |
-| Swagger      | http://localhost:3000/docs |
-| Adminer      | http://localhost:8081  |
-| RedisInsight | http://localhost:5540  |
-| Kafka UI     | http://localhost:8082  |
-| Jaeger       | http://localhost:16686 |
+### Docker Compose stack
+
+`docker compose up --build` starts the service **and** every dependency + dev UI. Services, images, and host ports:
+
+| Service | Image | Host port(s) | Purpose |
+| --- | --- | --- | --- |
+| `app` | built from `apps/service/Dockerfile` | 3000 | the NestJS service |
+| `postgres` | `postgres:18-alpine` | 5432 | primary datastore |
+| `adminer` | `adminer:5` | 8081 | Postgres web UI |
+| `redis` | `redis:8-alpine` | 6379 | cache + throttler store |
+| `redisinsight` | `redis/redisinsight:latest` | 5540 | Redis web UI |
+| `kafka` | `apache/kafka:4.2.0` | 29092 (host) | KRaft broker (containers reach it at `kafka:9092`) |
+| `kafka-ui` | `ghcr.io/kafbat/kafka-ui:latest` | 8082 | Kafka web UI |
+| `localstack` | `localstack/localstack:latest` | 4566 | SQS (for `MESSAGING_DRIVER=sqs`) |
+| `jaeger` | `jaegertracing/jaeger:latest` | 16686, 4318 | traces — Jaeger v2, native OTLP ingest |
+
+**Web UIs:** Swagger [`:3000/docs`](http://localhost:3000/docs) · Adminer [`:8081`](http://localhost:8081) ·
+RedisInsight [`:5540`](http://localhost:5540) · Kafka UI [`:8082`](http://localhost:8082) ·
+Jaeger [`:16686`](http://localhost:16686)
+
+```bash
+docker compose up --build      # whole stack (add -d to detach)
+docker compose build app       # (re)build just the service image
+docker compose down -v         # stop + wipe the postgres volume
+```
 
 Try it: `POST /v1/auth/register` → take `accessToken` → `GET /v1/auth/me`.
 

@@ -68,6 +68,7 @@ data-source.ts     # standalone DataSource for the TypeORM CLI
 - **cockatiel is ESM-only + pnpm:** both Jest configs whitelist it via `node_modules/\.pnpm/(?!cockatiel@)` (pnpm's `.pnpm/` nesting defeats the classic `node_modules/(?!cockatiel)` pattern).
 - **generate:openapi** boots Nest in **preview mode** (`{ preview: true }`) → no DB/Redis/Kafka connect; it re-applies URI versioning so paths match runtime (`/v1/...`; health version-neutral). `openapi.json` + `schema.d.ts` are committed, so `api-client#build` is hermetic.
 - **@repo/api-client is source-exported** (`exports: ./src/index.ts`) — Vite consumes the TS directly; build only regenerates types.
+- **Docker build context is the repo ROOT** (`compose.yaml` `build.context: .`) — the effective `.dockerignore` is at the repo root (not `apps/service/`); the image installs the whole workspace and ships the service via `pnpm --filter service deploy --prod --legacy` (pnpm 11 `deploy` needs `--legacy`; `ENV CI=true` so the install doesn't prompt).
 - Old cache stores deprecated — Keyv only. `HttpModule` from `@nestjs/common` deprecated → @nestjs/axios. OTel exporters → OTLP. Redis throttler = `@nest-lab/throttler-storage-redis`. SQS is not a built-in transport.
 - **Hybrid app (HTTP + Kafka):** every HTTP-assuming global guard/filter checks `context.getType() !== 'http'` — new ones must too or Kafka consumers crash.
 - `OTEL_ENABLED` accepts only literal `true`/`false`. Raw `Keyv` providers get no Nest lifecycle — disconnect in `onApplicationShutdown`.
