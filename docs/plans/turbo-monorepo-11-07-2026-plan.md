@@ -158,6 +158,11 @@ milestone (mostly-mechanical migration + small new code); instead the continuous
 (lint/typecheck/test/test:int/build/e2e) ran per milestone and the full human-style review is
 consolidated into **Gate B on the entire diff** before the PR.
 
+**Gate B (holistic review):** 3 parallel review agents over the whole diff. api-client/service — clean.
+web — one finding (HealthPanel `Promise.all` → `Promise.allSettled`), fixed. infra — converged on the two
+Docker issues below. Docker build then validated locally (image builds; `dist/main.js` + `dist/tracing.js`
+present; argon2 loads) after fixes: root `.dockerignore` (context is repo root), `CI=true`, `pnpm deploy --legacy`.
+
 **Open follow-ups:** (1) two latent type errors in `current-user.decorator.spec.ts` surface only under
-full `tsc` (not `nest build`/jest) — fix + broaden `typecheck` to include specs. (2) `docker compose build app`
-not yet run locally — validated by CI. (3) admin token for a populated Users panel is documented, not seeded.
+full `tsc` (not `nest build`/jest) — fix + broaden `typecheck` to include specs. (2) admin token for a
+populated Users panel is documented, not seeded.

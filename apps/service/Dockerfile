@@ -4,6 +4,7 @@
 # NOTE: the build context is the REPO ROOT (see compose.yaml build.context) so the
 # whole workspace (pnpm-lock.yaml, pnpm-workspace.yaml, packages/*) is available.
 FROM node:24-alpine AS build
+ENV CI=true
 RUN corepack enable
 WORKDIR /repo
 COPY . .
@@ -11,7 +12,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter service build
 # `deploy` produces a symlink-free bundle at /app: the service's published files
 # ("files": ["dist"] in its package.json) + production-only node_modules.
-RUN pnpm --filter service deploy --prod /app
+RUN pnpm --filter service deploy --prod --legacy /app
 
 # --- runtime: alpine, nonroot user ---
 FROM node:24-alpine

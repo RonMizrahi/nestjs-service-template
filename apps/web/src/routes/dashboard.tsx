@@ -103,17 +103,19 @@ function HealthPanel() {
 
   useEffect(() => {
     let active = true;
-    void Promise.all([api.GET('/health/liveness'), api.GET('/health/readiness')])
-      .then(([liveness, readiness]) => {
+    // allSettled so a failure on one probe doesn't blank the other.
+    void Promise.allSettled([api.GET('/health/liveness'), api.GET('/health/readiness')]).then(
+      ([liveness, readiness]) => {
         if (!active) return;
         setState({
           status: 'ok',
-          data: { liveness: liveness.response.ok, readiness: readiness.response.ok },
+          data: {
+            liveness: liveness.status === 'fulfilled' && liveness.value.response.ok,
+            readiness: readiness.status === 'fulfilled' && readiness.value.response.ok,
+          },
         });
-      })
-      .catch(() => {
-        if (active) setState({ status: 'error', message: 'Health check failed' });
-      });
+      },
+    );
     return () => {
       active = false;
     };
