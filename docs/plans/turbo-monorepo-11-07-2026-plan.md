@@ -166,3 +166,7 @@ present; argon2 loads) after fixes: root `.dockerignore` (context is repo root),
 **Open follow-ups:** (1) two latent type errors in `current-user.decorator.spec.ts` surface only under
 full `tsc` (not `nest build`/jest) — fix + broaden `typecheck` to include specs. (2) admin token for a
 populated Users panel is documented, not seeded.
+
+**PR:** [#2 → main](https://github.com/RonMizrahi/nestjs-service-template/pull/2). QA handover (Phase 4)
+skipped by owner decision — service behavior unchanged (108 unit + 23 integration green), SPA covered by
+hermetic Playwright e2e, Gate B clean, Docker image validated.
