@@ -8,10 +8,11 @@ overrides:
 
 # Approve build scripts for native/functional deps (npm ran these previously).
 # argon2 = password hashing; ssh2/cpu-features = Testcontainers (Docker) native deps;
-# unrs-resolver = eslint import resolver; protobufjs = OTel. @scarf analytics left off.
-onlyBuiltDependencies:
-  - argon2
-  - cpu-features
-  - ssh2
-  - unrs-resolver
-  - protobufjs
+# unrs-resolver = eslint import resolver; protobufjs = OTel. @scarf analytics disabled.
+allowBuilds:
+  argon2: true
+  cpu-features: true
+  ssh2: true
+  unrs-resolver: true
+  protobufjs: true
+  "@scarf/scarf": false
