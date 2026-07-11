@@ -5,6 +5,11 @@ Production-grade **NestJS 11** service template — the Node/TypeScript mirror o
 Latest stable stack, zero deprecated APIs, short decorator-heavy code, and every
 cross-cutting concern a real service needs, pre-wired and tested.
 
+**Turborepo monorepo (pnpm):** the service lives in `apps/service`; a thin
+Vite + React 19 + Tailwind SPA in `apps/web` calls a few endpoints through
+`@repo/api-client` (types generated from the service's OpenAPI spec). Shared
+tsconfig/eslint live in `packages/*`; Turbo runs lint/typecheck/test/build with caching.
+
 ## Features
 
 - **HTTP** — Express 5, helmet, CORS, URI versioning (`/v1/...`), global validation
@@ -31,11 +36,12 @@ cross-cutting concern a real service needs, pre-wired and tested.
 ## Quickstart
 
 ```bash
-npm ci
-npm run start:dev              # in-memory cache, no broker, Postgres required (see below)
+pnpm install
+pnpm --filter service start:dev   # service on :3000 (Postgres required — see below)
+pnpm --filter web dev             # SPA on :5173 (calls the service)
 
-# or bring up EVERYTHING (app + postgres/adminer + redis/redisinsight + kafka/kafka-ui
-# + localstack + jaeger):
+# or bring up the full backend dev stack (app + postgres/adminer + redis/redisinsight
+# + kafka/kafka-ui + localstack + jaeger):
 docker compose up --build
 ```
 
@@ -52,14 +58,13 @@ Try it: `POST /v1/auth/register` → take `accessToken` → `GET /v1/auth/me`.
 ## Commands
 
 ```bash
-npm run start:dev      # watch mode
-npm run build          # nest build
-npm run start:prod     # node --require ./dist/tracing dist/main
-npm run test           # unit tests (Jest)
-npm run test:int       # integration tests (Testcontainers — Docker required)
-npm run lint           # eslint --fix   (lint:check = CI mode)
-npm run migration:generate -- src/migrations/<Name>
-npm run migration:run / migration:revert
+pnpm turbo run lint typecheck test build   # all packages, cache-aware
+pnpm turbo run test:int                    # service integration tests (Testcontainers — Docker)
+pnpm turbo run e2e --filter=web            # SPA Playwright e2e (hermetic)
+pnpm --filter service start:dev            # service watch mode
+pnpm --filter service generate:openapi     # refresh the api-client types (preview mode, no DB)
+pnpm --filter web dev                      # SPA dev server (:5173)
+pnpm --filter service run migration:generate -- src/migrations/<Name>   # + migration:run / :revert
 ```
 
 ## Environment
@@ -93,7 +98,7 @@ config. Dev defaults exist for everything; **production requires** `DATABASE_URL
 ## Architecture
 
 ```
-src/
+apps/service/src/
   config/        # Zod env schema — the only place process.env is read¹
   common/        # filters, interceptors, guards, decorators, pipes (global via APP_*)
   auth/          # JWT + local strategies, guards, argon2, role→permission policy
@@ -104,7 +109,7 @@ src/
   external/      # resilient external API client (cockatiel + axios)
   observability/ # Prometheus /metrics, OTel @Span support
   tracing.ts     # ¹the exception: OTel preload runs BEFORE Nest (node --require)
-data-source.ts   # standalone DataSource for the TypeORM CLI
+apps/service/data-source.ts   # standalone DataSource for the TypeORM CLI
 ```
 
 **Request pipeline:** helmet/CORS → pino (x-request-id) → throttler → JWT guard →
@@ -154,7 +159,8 @@ revocation, add a denylist or a fresh DB check in `JwtStrategy.validate`.
 
 ## Testing
 
-- **Unit** (`*.spec.ts`, next to code): 104 tests — services, guards, buses, policies.
-- **Integration** (`test/*.int-spec.ts`): 23 tests against **real Postgres + Redis**
+- **Unit** (`apps/service/**/*.spec.ts`): 108 tests — services, guards, buses, policies.
+- **Integration** (`apps/service/test/*.int-spec.ts`): 23 tests against **real Postgres + Redis**
   via Testcontainers — auth flows, users CRUD + RBAC, health, metrics, error envelope.
-- No UI → no e2e; the full request→response path is covered by the integration suite.
+- **e2e (SPA only)** (`apps/web/e2e/*.spec.ts`): Playwright with the API mocked (hermetic) — login,
+  auth-gated routing, health/users panels. The service stays e2e-free (integration covers it).

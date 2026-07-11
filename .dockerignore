@@ -1,11 +1,11 @@
-node_modules
-dist
-coverage
-docs
-test
+# Docker build context is the repo root (see compose.yaml build.context),
+# so this root .dockerignore is the one that applies.
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/test-results
+**/playwright-report
 .git
 .github
-.env
-*.md
-Dockerfile
-compose.yaml
+**/*.md

@@ -16,6 +16,6 @@
       }
     ]
   },
-  "transformIgnorePatterns": ["node_modules[/\\\\](?!cockatiel[/\\\\])"],
+  "transformIgnorePatterns": ["node_modules/\\.pnpm/(?!cockatiel@)"],
   "testTimeout": 120000
 }

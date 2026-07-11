@@ -1,24 +1,16 @@
 // @ts-check
-import js from '@eslint/js';
+import { node } from '@repo/eslint-config';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   { ignores: ['dist/**', 'coverage/**', 'node_modules/**'] },
-  js.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  ...node,
   {
     languageOptions: {
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
-    },
-  },
-  {
-    files: ['**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
 );

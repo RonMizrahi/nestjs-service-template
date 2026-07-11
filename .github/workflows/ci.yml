@@ -12,22 +12,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
       - name: Install
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: npm run lint:check
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
 
-      - name: Build
-        run: npm run build
-
-      - name: Unit tests
-        run: npm run test
+      - name: Lint / typecheck / test / build
+        run: pnpm turbo run lint typecheck test build
 
       - name: Integration tests (Testcontainers)
-        run: npm run test:int
+        run: pnpm turbo run test:int
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: e2e
+        run: pnpm turbo run e2e --filter=web
