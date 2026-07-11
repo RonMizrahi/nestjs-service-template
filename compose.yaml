@@ -27,6 +27,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       jaeger:
         condition: service_started
 
@@ -39,7 +41,9 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # PG18 stores data in a version-specific subdir (PGDATA=/var/lib/postgresql/18/docker);
+      # mount the parent so the volume persists and the image's mount-location check passes.
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U app -d app']
       interval: 5s
@@ -96,6 +100,27 @@ services:
       timeout: 10s
       retries: 12
 
+  # One-shot: pre-create the domain topic so the app's consumer doesn't race
+  # topic auto-creation on first boot (KafkaJS throws UNKNOWN_TOPIC_OR_PARTITION
+  # fatally if it subscribes before the topic exists). Mirrors localstack-init.
+  kafka-init:
+    image: apache/kafka:4.2.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint:
+      - /opt/kafka/bin/kafka-topics.sh
+      - --bootstrap-server
+      - kafka:9092
+      - --create
+      - --if-not-exists
+      - --topic
+      - user.created
+      - --partitions
+      - '1'
+      - --replication-factor
+      - '1'
+
   kafka-ui:
     image: ghcr.io/kafbat/kafka-ui:latest
     ports:
@@ -108,7 +133,7 @@ services:
         condition: service_healthy
 
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:4.4.0 # last release before the account/LOCALSTACK_AUTH_TOKEN requirement (2026.3.0+); Community SQS runs token-free
     ports:
       - '4566:4566'
     environment:
