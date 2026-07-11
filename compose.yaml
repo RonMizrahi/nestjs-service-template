@@ -2,7 +2,9 @@ name: nestjs-service-template
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/service/Dockerfile
     ports:
       - '3000:3000'
     environment:
@@ -112,7 +114,7 @@ services:
     environment:
       SERVICES: sqs
     volumes:
-      - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init.sh:ro
+      - ./apps/service/scripts/localstack-init.sh:/etc/localstack/init/ready.d/init.sh:ro
     healthcheck:
       test: ['CMD-SHELL', 'curl -sf http://localhost:4566/_localstack/health']
       interval: 5s
